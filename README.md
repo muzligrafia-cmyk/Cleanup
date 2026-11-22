@@ -2,7 +2,7 @@
 Adobe Illustrator script to clean up vector data prior to laser cutting.
 
 # Changelog
-https://github.com/muzligrafia-cmyk/Cleanup/blob/main/README.md
+
 V2.2:
 - Fixed duplicates being moved but not recoloured (happened with lines pulled out of compound paths, and with zero/hairline strokes).
 
