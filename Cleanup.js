@@ -1,4 +1,9 @@
-// Adobe Illustrator Script: Refined Laser Janitor (V2.2)
+// Adobe Illustrator Script: Refined Laser Janitor (V2.3)
+//
+// V2.3: Speck removal only touches CUTS (exact green 0,255,0 or pink
+//       255,0,255 strokes). Tiny engraving, marking, scoring and perforation
+//       bits are kept and counted in the alert. Paths with 0-1 anchor points
+//       are still deleted whatever their colour (invisible junk).
 //
 // V2.2: Fixed duplicates being moved but not recoloured (happened with lines
 //       pulled out of compound paths, and with zero/hairline strokes).
@@ -63,14 +68,25 @@ function refinedJanitor() {
     // --- STEP 2: Clean points & remove specks ---
     var specksRemoved = 0;
     var pointsCleaned = 0;
+    var tinyNonCutKept = 0;
     for (var i = allPaths.length - 1; i >= 0; i--) {
         var item = allPaths[i];
         try {
             pointsCleaned += cleanPoints(item);
-            if (item.pathPoints.length < 2 || isSpeck(item)) {
+            if (item.pathPoints.length < 2) {
+                // Empty / single-point path: junk whatever its colour
                 item.remove();
                 allPaths.splice(i, 1);
                 specksRemoved++;
+            } else if (isSpeck(item)) {
+                if (isCut(item)) {
+                    item.remove();
+                    allPaths.splice(i, 1);
+                    specksRemoved++;
+                } else {
+                    // Tiny engraving dot, perforation dash, marking etc. — keep it
+                    tinyNonCutKept++;
+                }
             }
         } catch (e) {
             allPaths.splice(i, 1);
@@ -142,6 +158,7 @@ function refinedJanitor() {
     app.redraw();
     alert("Cleanup Complete!\n" +
           "- Specks Removed: " + specksRemoved + "\n" +
+          "- Tiny Non-Cut Items Kept: " + tinyNonCutKept + "\n" +
           "- Duplicate Points Removed: " + pointsCleaned + "\n" +
           "- Duplicates Moved to '" + DUP_LAYER_NAME + "' Layer: " + (dupItems.length - moveFailed) + "\n" +
           "- Partial Overlaps Marked: " + markersDrawn +
@@ -271,6 +288,20 @@ function isSpeck(item) {
     var w = Math.abs(b[2] - b[0]);
     var h = Math.abs(b[1] - b[3]);
     return Math.sqrt(w * w + h * h) < SPECK_DIAG;
+}
+
+// Is this path a cut? Only an exact green (0,255,0) or pink (255,0,255)
+// stroke counts. Works with plain RGB colours and with global swatches
+// (e.g. colours from a CC library), which Illustrator reports as SpotColor.
+function isCut(item) {
+    if (!item.stroked) return false;
+    var c = item.strokeColor;
+    if (c.typename === "SpotColor") c = c.spot.color;
+    if (c.typename !== "RGBColor") return false; // CMYK, grey, gradient, none...
+    var r = Math.round(c.red), g = Math.round(c.green), b = Math.round(c.blue);
+    var isGreen = (r === 0   && g === 255 && b === 0);
+    var isPink  = (r === 255 && g === 0   && b === 255);
+    return isGreen || isPink;
 }
 
 function samePoint(a, b) {

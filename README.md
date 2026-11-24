@@ -3,6 +3,11 @@ Adobe Illustrator script to clean up vector data prior to laser cutting.
 
 # Changelog
 
+# v2.3:
+- Speck removal now only touches cuts (exact green 0,255,0 or pink 255,0,255 strokes, including global/CC library swatches).
+- Tiny engraving, marking, scoring and perforation bits are kept, and counted in the alert as "Tiny Non-Cut Items Kept".
+- Paths with 0–1 anchor points are still deleted whatever their colour.
+
 # v2.2:
 - Fixed duplicates being moved but not recoloured (happened with lines pulled out of compound paths, and with zero/hairline strokes).
 
